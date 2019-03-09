@@ -5,7 +5,7 @@ import { FEATURE_NAME } from './hooks'
 import * as ingestUUID from './ingest-uuid'
 import * as ingestCollide from './ingest-collide'
 
-const size = 1
+const size = 0
 const metrics = true
 
 export const register = ({ registerAction, createHook }) => {

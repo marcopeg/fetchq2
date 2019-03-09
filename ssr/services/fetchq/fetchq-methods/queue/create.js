@@ -3,6 +3,7 @@ const q = `
 CREATE TABLE ":schemaName_data".":queueName__docs" (
     subject character varying(50) PRIMARY KEY,
     payload jsonb DEFAULT '{}',
+    status int DEFAULT -1,
     attempts integer DEFAULT 0,
     iterations integer DEFAULT 0,
     next_iteration timestamp with time zone,

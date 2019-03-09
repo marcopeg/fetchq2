@@ -18,18 +18,18 @@ export const register = ({ registerAction, createHook }) => {
 
             await client.docs.insert('tasks', [
                 [ 'task1', client.utils.json, client.utils.now ],
-                [ 'task2', client.utils.json, client.utils.plan('1m') ],
+                [ 'task2', client.utils.json, client.utils.plan('1y') ],
             ], { metrics })
             
             await client.docs.upsert('tasks', [
                 [ 'task1', client.utils.json, client.utils.now ],
-                [ 'task2', client.utils.json, client.utils.plan('1m') ],
+                [ 'task2', client.utils.json, client.utils.now ],
                 [ 'task3', client.utils.json, client.utils.now ],
-                [ 'task4', client.utils.json, client.utils.plan('1m') ],
+                [ 'task4', client.utils.json, client.utils.plan('1y') ],
             ], { metrics })
 
-            const metrics = await client.metrics.get('tasks')
-            console.log(metrics)
+            const stats = await client.metrics.get('tasks')
+            console.log(stats)
         },
     })
 }

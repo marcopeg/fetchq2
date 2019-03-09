@@ -5,12 +5,18 @@ import { sqlNextIteration } from '../lib/sql-next-iteration'
 
 const q = `
 WITH
-all_docs (subject, payload, next_iteration) AS (
-    VALUES :values
+all_docs (subject, payload, next_iteration, status) AS (
+	SELECT
+		origin.*, 
+		CASE WHEN origin.next_iteration <= NOW() THEN 1
+             ELSE 0
+        END AS status 
+	FROM ( VALUES :values ) AS origin (subject, payload, next_iteration)
 ),
 inserted_docs AS (
-    INSERT INTO ":schemaName_data".":queueName__docs" (subject, payload, next_iteration)
-    SELECT subject, payload::jsonb, next_iteration FROM all_docs
+    INSERT INTO ":schemaName_data".":queueName__docs" (subject, payload, next_iteration, status)
+    SELECT subject, payload::jsonb, next_iteration, status
+    FROM all_docs
     ON CONFLICT (subject) DO NOTHING
     RETURNING *
 ),
@@ -19,7 +25,8 @@ skipped_docs AS (
         _source.*, 
         _values.payload AS payload_new,
         _values.next_iteration AS next_iteration_new,
-        _source.next_iteration AS next_iteration_old
+        _values.status AS status_new,
+        _source.status AS status_old
     FROM ":schemaName_data".":queueName__docs" as _source
     JOIN all_docs AS _values ON _source.subject = _values.subject
     WHERE _source.subject NOT IN (SELECT subject FROM inserted_docs)
@@ -29,7 +36,8 @@ updated_docs AS (
     UPDATE ":schemaName_data".":queueName__docs" AS docs
     SET
         payload = _value.payload_new::jsonb,
-        next_iteration = _value.next_iteration_new
+        next_iteration = _value.next_iteration_new,
+        status = _value.status_new
     FROM (
         SELECT * FROM skipped_docs
     ) AS _value
@@ -95,19 +103,19 @@ increment_pln AS (
     SELECT 'pln', (
         (
             SELECT COUNT(subject) FROM inserted_docs
-            WHERE next_iteration > NOW()
+            WHERE status = 1
         )
         +
         (
             SELECT COUNT(subject) FROM updated_docs
-            WHERE next_iteration_old <= NOW()
-            AND next_iteration_new > NOW()
+            WHERE status_old = 1
+            AND status_new = 0
         )
         -
         (
             SELECT COUNT(subject) FROM updated_docs
-            WHERE next_iteration_old > NOW()
-            AND next_iteration_new <= NOW()
+            WHERE status_old = 0
+            AND status_new = 1
         )
     ), NOW()
     ON CONFLICT (metric) DO
@@ -120,19 +128,19 @@ increment_pnd AS (
     SELECT 'pnd', (
         (
             SELECT COUNT(subject) FROM inserted_docs
-            WHERE next_iteration <= NOW()
+            WHERE status  = 1
         )
         +
         (
             SELECT COUNT(subject) FROM updated_docs
-            WHERE next_iteration_old > NOW()
-            AND next_iteration_new <= NOW()
+            WHERE status_old = 0
+            AND status_new  = 1
         )
         -
         (
             SELECT COUNT(subject) FROM updated_docs
-            WHERE next_iteration_old <= NOW()
-            AND next_iteration_new > NOW()
+            WHERE status_old  = 1
+            AND status_new = 0
         )
     ), NOW()
     ON CONFLICT (metric) DO

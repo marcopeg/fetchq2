@@ -5,12 +5,17 @@ import { sqlNextIteration } from '../lib/sql-next-iteration'
 
 const q = `
 WITH
-all_docs (subject, payload, next_iteration) AS (
-    VALUES :values
+all_docs (subject, payload, next_iteration, status) AS (
+	SELECT
+		origin.*, 
+		CASE WHEN origin.next_iteration <= NOW() THEN 1
+             ELSE 0
+        END AS status 
+	FROM ( VALUES :values ) AS origin (subject, payload, next_iteration)
 ),
 inserted_docs AS (
-    INSERT INTO ":schemaName_data".":queueName__docs" (subject, payload, next_iteration)
-    SELECT subject, payload::jsonb, next_iteration FROM all_docs
+    INSERT INTO ":schemaName_data".":queueName__docs" (subject, payload, next_iteration, status)
+    SELECT subject, payload::jsonb, next_iteration, status FROM all_docs
     ON CONFLICT (subject) DO NOTHING
     RETURNING *
 )
@@ -42,7 +47,7 @@ increment_pln AS (
     INSERT INTO ":schemaName_data".":queueName__metrics" AS t (metric, amount, last_update)
     SELECT 'pln', (
         SELECT COUNT(subject) FROM inserted_docs
-        WHERE next_iteration > NOW()
+        WHERE status = 0
     ), NOW()
     ON CONFLICT (metric) DO UPDATE SET 
     amount = t.amount + EXCLUDED.amount,
@@ -52,7 +57,7 @@ increment_pnd AS (
     INSERT INTO ":schemaName_data".":queueName__metrics" AS t (metric, amount, last_update)
     SELECT 'pnd', (
         SELECT COUNT(subject) FROM inserted_docs
-        WHERE next_iteration <= NOW()
+        WHERE status = 1
     ), NOW()
     ON CONFLICT (metric) DO UPDATE SET
     amount = t.amount + EXCLUDED.amount,

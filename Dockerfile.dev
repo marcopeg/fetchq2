@@ -1,0 +1,26 @@
+#
+# Webapp API service for Development
+#
+
+FROM node:10.14-alpine
+
+
+# NPM Install for building
+WORKDIR /usr/src/app
+ADD package.json /usr/src/app/package.json
+RUN npm install
+
+# Copy source files:
+WORKDIR /usr/src/app
+ADD index.js /usr/src/app
+ADD index.dev.js /usr/src/app
+ADD .babelrc /usr/src/app
+ADD .env /usr/src/app
+ADD .eslintrc /usr/src/app
+ADD .eslintignore /usr/src/app
+ADD ssr /usr/src/app/ssr
+
+# Default environment configuration:
+ENV STUFFER_DATA /var/lib/stuffer/data
+ENV STUFFER_COMMUNITY_EXTENSIONS /var/lib/stuffer/extensions
+ENV STUFFER_CONFIG /var/lib/stuffer/stuffer-config.json

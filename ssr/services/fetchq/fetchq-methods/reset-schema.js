@@ -1,7 +1,9 @@
 
 const q = `
-DROP SCHEMA IF EXISTS :schemaName CASCADE;
-CREATE SCHEMA :schemaName;
+DROP SCHEMA IF EXISTS :schemaName_data CASCADE;
+DROP SCHEMA IF EXISTS :schemaName_catalog CASCADE;
+CREATE SCHEMA :schemaName_data;
+CREATE SCHEMA :schemaName_catalog;
 `
 
 export default ctx => async () => {

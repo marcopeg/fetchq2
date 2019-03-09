@@ -1,6 +1,7 @@
 
 const q1 = `
-CREATE SCHEMA IF NOT EXISTS :schemaName;
+CREATE SCHEMA IF NOT EXISTS :schemaName_data;
+CREATE SCHEMA IF NOT EXISTS :schemaName_catalog;
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 `
 

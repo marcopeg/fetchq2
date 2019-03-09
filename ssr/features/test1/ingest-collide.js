@@ -2,6 +2,7 @@ import { getClient } from 'services/fetchq'
 import { logInfo } from 'services/logger'
 
 const state = {
+    options: {},
     poolMaxSize: 1000,
     poolSize: 0,
     batch: 100,
@@ -26,7 +27,7 @@ export const loop = async () => {
         Math.random() > 0.5 ? client.utils.plan('1y') : client.utils.now,
     ]))
 
-    const res = await client.insert('tasks', values)
+    const res = await client.docs.insert('tasks', values, state.options)
     const duration = new Date() - start
 
     state.iterations += 1
@@ -44,9 +45,10 @@ export const loop = async () => {
     }
 }
 
-export const start = (pool = 1000, batch = 100) => {
+export const start = (pool = 1000, batch = 100, options = {}) => {
     state.poolMaxSize = pool
     state.batch = batch
+    state.options = options
     loop()
     return new Promise((resolve) => {
         const log = setInterval(() => {

@@ -1,6 +1,6 @@
 
-import { FetchqNULL } from '../utils.null'
-import { FetchqPayload } from '../utils.payload'
+import { FetchqNULL } from '../utils/null'
+import { FetchqPayload } from '../utils/payload'
 
 export const sqlPayload = (data = {}) => {
     if (

@@ -1,14 +1,15 @@
 import resetSchema from './fetchq-methods/reset-schema'
 import initSchema from './fetchq-methods/init-schema'
-import createQueue from './fetchq-methods/create-queue'
-import insertDocuments from './fetchq-methods/insert-documents'
-import upsertDocuments from './fetchq-methods/upsert-documents'
-import utilsPlan from './fetchq-methods/utils.plan'
-import utilsLiteral from './fetchq-methods/utils.literal'
-import utilsNow from './fetchq-methods/utils.now'
-import utilsUuid from './fetchq-methods/utils.uuid'
-import utilsNull from './fetchq-methods/utils.null'
-import utilsPayload from './fetchq-methods/utils.payload'
+import createQueue from './fetchq-methods/queue/create'
+import insertDocuments from './fetchq-methods/documents/insert'
+import upsertDocuments from './fetchq-methods/documents/upsert'
+import getMetrics from './fetchq-methods/metrics/get'
+import utilsPlan from './fetchq-methods/utils/plan'
+import utilsLiteral from './fetchq-methods/utils/literal'
+import utilsNow from './fetchq-methods/utils/now'
+import utilsUuid from './fetchq-methods/utils/uuid'
+import utilsNull from './fetchq-methods/utils/null'
+import utilsPayload from './fetchq-methods/utils/payload'
 
 export class Fetchq {
     constructor () {
@@ -19,9 +20,19 @@ export class Fetchq {
 
         this.initSchema = initSchema(this)
         this.resetSchema = resetSchema(this)
-        this.createQueue = createQueue(this)
-        this.insert = insertDocuments(this)
-        this.upsert = upsertDocuments(this)
+
+        this.queue = {
+            create: createQueue(this)
+        }
+
+        this.docs = {
+            insert: insertDocuments(this),
+            upsert: upsertDocuments(this),
+        }
+
+        this.metrics = {
+            get: getMetrics(this),
+        }
 
         this.utils = {
             now: utilsNow(this)(),

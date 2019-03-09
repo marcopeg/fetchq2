@@ -21,6 +21,7 @@ const services = [
 ]
 
 const features = [
+    // require('./features/test0'),
     require('./features/test1'),
 ]
 

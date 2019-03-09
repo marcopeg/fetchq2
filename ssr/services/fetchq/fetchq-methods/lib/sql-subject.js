@@ -1,4 +1,4 @@
-import { FetchqUUID } from '../utils.uuid'
+import { FetchqUUID } from '../utils/uuid'
 
 export const sqlSubject = (value) => {
     if (typeof value === 'string') {

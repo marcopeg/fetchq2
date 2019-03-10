@@ -5,6 +5,8 @@ import createQueue from './fetchq-methods/queue/create'
 import indexQueue from './fetchq-methods/queue/index-create'
 import dropQueueIndex from './fetchq-methods/queue/index-drop'
 
+import mntOrphans from './fetchq-methods/queue/mnt-orphans'
+
 import insertDocuments from './fetchq-methods/documents/insert'
 import upsertDocuments from './fetchq-methods/documents/upsert'
 import pickDocument from './fetchq-methods/documents/pick'
@@ -36,6 +38,9 @@ export class Fetchq {
             create: createQueue(this),
             index: indexQueue(this),
             dropIndex: dropQueueIndex(this),
+            mnt: {
+                orphans: mntOrphans(this),
+            }
         }
 
         this.docs = {

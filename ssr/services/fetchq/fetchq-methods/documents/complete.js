@@ -1,7 +1,6 @@
 
 import { sqlSubject } from '../lib/sql-subject'
 import { sqlPayload } from '../lib/sql-payload'
-import { sqlNextIteration } from '../lib/sql-next-iteration'
 import { sqlSmallQuery } from '../lib/sql-small-query'
 
 const q = `

@@ -2,13 +2,14 @@
 import { sqlSubject } from '../lib/sql-subject'
 import { sqlPayload } from '../lib/sql-payload'
 import { sqlNextIteration } from '../lib/sql-next-iteration'
+import { sqlSmallQuery } from '../lib/sql-small-query'
 
 const q = `
 WITH
 all_docs (subject, payload, next_iteration, status) AS (
-	SELECT
-		origin.*, 
-		CASE WHEN origin.next_iteration <= NOW() THEN 1
+    SELECT
+        origin.*, 
+        CASE WHEN origin.next_iteration <= NOW() THEN 1
              ELSE 0
         END AS status 
 	FROM ( VALUES :values ) AS origin (subject, payload, next_iteration)
@@ -72,25 +73,25 @@ const doc2str = (acc, doc) => {
     return acc + `,(${subject},${payload},${nextIteration})`
 }
 
-export default ctx => async (queueName, docs, options = {}) => {
-    try {
-        const values = docs.reduce(doc2str, '').substr(1)
-        const query = q
-            .replace(/:schemaName/g, ctx.schema)
-            .replace(/:queueName/g, queueName)
-            .replace(/:values/g, values)
-            .replace(/:queryStats/g, options.metrics === false ? '' : (
-                qStats
-                    .replace(/:schemaName/g, ctx.schema)
-                    .replace(/:queueName/g, queueName)
-            ))
-        
-        const res = await ctx.query(query)
+export default ctx => {
+    const [ _q, _qStats ] = sqlSmallQuery(ctx, q, qStats)
 
-        return res[0]
-    } catch (err) {
-        const error = new Error(`[Fetchq] failed to insert documents: ${queueName} - ${err.message}`)
-        error.original = err
-        throw error
+    return async (queueName, docs, options = {}) => {
+        try {
+            const values = docs.reduce(doc2str, '').substr(1)
+            const query = _q
+                .replace(/:queueName/g, queueName)
+                .replace(/:values/g, values)
+                .replace(/:queryStats/g, options.metrics === false ? '' : (
+                    _qStats.replace(/:queueName/g, queueName)
+                ))
+            
+            const res = await ctx.query(query)
+            return res[0]
+        } catch (err) {
+            const error = new Error(`[Fetchq] failed to insert documents: ${queueName} - ${err.message}`)
+            error.original = err
+            throw error
+        }
     }
 }

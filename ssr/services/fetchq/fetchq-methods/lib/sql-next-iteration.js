@@ -1,5 +1,6 @@
 import moment from 'moment'
 import { FetchqPlan } from '../utils/plan'
+import { FetchqSchedule } from '../utils/schedule'
 import { FetchqLiteral } from '../utils/literal'
 import { FetchqNOW } from '../utils/now'
 
@@ -14,6 +15,7 @@ export const sqlNextIteration = (data) => {
 
     if (
         data instanceof FetchqPlan
+        || data instanceof FetchqSchedule
         || data instanceof FetchqLiteral
         || data instanceof FetchqNOW
     ) {

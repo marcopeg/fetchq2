@@ -3,8 +3,11 @@ import initSchema from './fetchq-methods/init-schema'
 import createQueue from './fetchq-methods/queue/create'
 import insertDocuments from './fetchq-methods/documents/insert'
 import upsertDocuments from './fetchq-methods/documents/upsert'
+import pickDocument from './fetchq-methods/documents/pick'
+import scheduleDocument from './fetchq-methods/documents/schedule'
 import getMetrics from './fetchq-methods/metrics/get'
 import utilsPlan from './fetchq-methods/utils/plan'
+import utilsSchedule from './fetchq-methods/utils/schedule'
 import utilsLiteral from './fetchq-methods/utils/literal'
 import utilsNow from './fetchq-methods/utils/now'
 import utilsUuid from './fetchq-methods/utils/uuid'
@@ -28,6 +31,8 @@ export class Fetchq {
         this.docs = {
             insert: insertDocuments(this),
             upsert: upsertDocuments(this),
+            pick: pickDocument(this),
+            schedule: scheduleDocument(this),
         }
 
         this.metrics = {
@@ -40,6 +45,7 @@ export class Fetchq {
             null: utilsNull(this)(),
             payload: utilsPayload(this)(),
             plan: utilsPlan(this),
+            schedule: utilsSchedule(this),
             literal: utilsLiteral(this),
         }
     }

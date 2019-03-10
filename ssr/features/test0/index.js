@@ -30,6 +30,17 @@ export const register = ({ registerAction, createHook }) => {
 
             const stats = await client.metrics.get('tasks')
             console.log(stats)
+
+            const docs = await client.docs.pick('tasks')
+            const doc1 = await client.docs.schedule('tasks', [{
+                ...docs[0],
+                nextIteration: client.utils.plan('100 y'),
+                payload: { done: true },
+            }])
+            console.log(docs)
+            console.log('-------------')
+            console.log(doc1)
+            console.log('-------->')
         },
     })
 }

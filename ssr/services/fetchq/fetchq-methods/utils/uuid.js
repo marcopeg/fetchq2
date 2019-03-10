@@ -1,7 +1,7 @@
 
 export class FetchqUUID {
     toString () {
-        return 'uuid_generate_v4()'
+        return 'uuid_generate_v4()::text'
     }
 }
 

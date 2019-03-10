@@ -1,5 +1,5 @@
 import { getClient } from 'services/fetchq'
-import { logInfo } from 'services/logger'
+import { logError, logInfo } from 'services/logger'
 
 const state = {
     options: {},
@@ -22,26 +22,31 @@ export const loop = async () => {
     const client = getClient()
 
     const values = Array(state.batch).fill(0).map(_ => ([
-        `task-${Math.floor(Math.random() * Math.floor(state.poolMaxSize * 10000000))}`,
+        client.utils.uuid,
         client.utils.payload,
         Math.random() > 0.5 ? client.utils.plan('1y') : client.utils.now,
     ]))
 
-    const res = await client.docs.insert('tasks', values, state.options)
-    const duration = new Date() - start
+    try {
+        const res = await client.docs.upsert('tasks', values, state.options)
+        const duration = new Date() - start
 
-    state.iterations += 1
-    state.totalDuration += duration
-    state.poolSize += res.length
-    state.avgDuration = Math.round(state.totalDuration / state.iterations)
-    state.avgSpeed = Math.floor(state.poolSize * 1000 / state.totalDuration)
-    // logInfo(`[test1] ${duration}ms - Ingest Collide ${res.length} of ${state.batch} tasks - ${state.poolSize}`)
+        state.iterations += 1
+        state.totalDuration += duration
+        state.poolSize += res.length
+        state.avgDuration = Math.round(state.totalDuration / state.iterations)
+        state.avgSpeed = Math.floor(state.poolSize * 1000 / state.totalDuration)
+        // logInfo(`[test1] ${duration}ms - Insert UUID ${res.length} of ${state.batch} unique documents - ${state.poolSize}`)
 
-    if (state.poolSize < state.poolMaxSize) {
-        state.nextLoop = setTimeout(loop, state.nextInterval)
-    } else {
-        logInfo(`[test1] Ingest Collide - DONE in ${state.totalDuration}ms, average speed: ${state.avgSpeed} docs/s`)
-        if (state.onComplete) state.onComplete()
+        if (state.poolSize < state.poolMaxSize) {
+            state.nextLoop = setTimeout(loop, state.nextInterval)
+        } else {
+            logInfo(`[test1] Upsert UUID - DONE in ${state.totalDuration}ms, average speed: ${state.avgSpeed} docs/s`)
+            if (state.onComplete) state.onComplete()
+        }
+    } catch (err) {
+        logError(`[test1] Upsert Collide ERROR - ${err.message}`)
+        console.log(err)
     }
 }
 
@@ -55,7 +60,7 @@ export const start = (pool = 1000, batch = 100, options = {}) => {
             const progress = Math.round(state.poolSize / state.poolMaxSize * 100)
             state.avgDurationStats.push(state.avgDuration)
             state.avgSpeedStats.push(state.avgSpeed)
-            logInfo(`[test1] Ingest collide - ${progress}% in ${state.totalDuration}ms, average speed: ${state.avgSpeed} docs/s`)
+            logInfo(`[test1] Upsert UUID - ${progress}% in ${state.totalDuration}ms, average speed: ${state.avgSpeed} docs/s`)
         }, 1000)
 
         state.onComplete = () => {

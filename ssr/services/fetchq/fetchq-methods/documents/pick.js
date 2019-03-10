@@ -5,31 +5,43 @@ import { sqlSmallQuery } from '../lib/sql-small-query'
 const q = `
 WITH
 picked_tasks AS (
-    UPDATE ":schemaName_data".":queueName__docs" SET 
+    SELECT origin.* FROM ":schemaName_data".":queueName__docs" AS origin
+    WHERE
+        status = 1
+    ORDER BY
+        attempts ASC,
+        next_iteration ASC
+    LIMIT :limit
+    FOR UPDATE FOR UPDATE SKIP LOCKED    
+),
+updated_tasks AS (
+    UPDATE ":schemaName_data".":queueName__docs" AS target
+    SET 
         status = 2,
-        attempts = attempts + 1,
+        attempts = target.attempts + 1,
         next_iteration = :lock
-    WHERE subject IN (
-        SELECT subject FROM ":schemaName_data".":queueName__docs"
-        WHERE
-            status = 1
-        ORDER BY
-            attempts ASC,
-            next_iteration ASC
-        LIMIT :limit
-        FOR UPDATE FOR UPDATE SKIP LOCKED
-    ) RETURNING subject
+    FROM (
+        SELECT * FROM picked_tasks
+    ) AS origin
+    WHERE target.subject = origin.subject
+    RETURNING
+        target.*,
+        origin.next_iteration AS prev_iteration,
+        origin.attempts AS prev_attempts
 )
 :queryStats
 SELECT
-    ':queueName' AS queue,
-    docs.subject AS subject,
-    docs.payload AS payload,
-    docs.attempts AS attempts,
-    docs.iterations AS iterations,
-    docs.next_iteration AS nextIteration,
-    docs.last_iteration AS lastIteration
-FROM ":schemaName_data".":queueName__docs" AS docs WHERE subject IN (SELECT subject FROM picked_tasks)
+    subject,
+    payload,
+    status,
+    attempts,
+    iterations,
+    prev_iteration,
+    next_iteration,
+    last_iteration
+FROM updated_tasks ORDER BY
+prev_attempts ASC,
+prev_iteration ASC;
 `
 
 const qStats = `

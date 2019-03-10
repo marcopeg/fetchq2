@@ -1,17 +1,18 @@
 import expect from 'expect'
-import { test } from 'lib/test'
+import { test } from 'lib/tester'
 import { START_FEATURE } from '@marcopeg/hooks'
 import { getClient } from 'services/fetchq'
 import { logInfo } from 'services/logger'
 import { FEATURE_NAME } from './hooks'
 import { bulkInsert, logReport } from './bulk-insert'
 
-const testSize = 1
-const testType = 'insert-copy'
+const testSize = 0
+const testType = 'process'
 
-const pickResetSchema = false
-const pickBulkInsert = false
-const pickUseMetrics = true
+const processResetSchema = false
+const processBulkInsert = true
+const processUseMetrics = true
+const processSize = 1000
 
 export const register = ({ registerAction, createHook }) => {
     registerAction({
@@ -107,21 +108,45 @@ export const register = ({ registerAction, createHook }) => {
                     logReport(`Insert${testSize} - no indexes`, report2)
                     break
                 
-                case 'pick':
+                case 'process':
                     logInfo('>>>>>> Pick Test <<<<<<<')
-                    if (pickBulkInsert) {
+                    if (processBulkInsert) {
                         report1 = await bulkInsert({
                             poolSize,
                             batchSize,
-                            resetSchema: pickResetSchema,
-                            useMetrics: pickUseMetrics,
+                            resetSchema: processResetSchema,
+                            useMetrics: processUseMetrics,
                         })
                         logReport('pick', report1)
                     }
-                    const start = new Date()
-                    const docs = await client.docs.pick('tasks')
-                    console.log(new Date() - start)
-                    console.log(docs)
+
+                    let start
+                    let docs
+                    let lapsed
+                    let speed
+
+                    // pick
+                    start = new Date()
+                    docs = await client.docs.pick('tasks', processSize)
+                    lapsed = new Date() - start
+                    speed = Math.floor(docs.length * 1000 / lapsed)
+                    logInfo(`[pick] ${docs.length}/${processSize} in ${lapsed}ms - ${speed} docs/s`)
+
+                    // schedule
+                    start = new Date()
+                    await client.docs.schedule('tasks', docs.map(doc => ({
+                        ...doc,
+                        next_iteration: client.utils.plan('1y'),
+                    })))
+                    lapsed = new Date() - start
+                    speed = Math.floor(docs.length * 1000 / lapsed)
+                    logInfo(`[schedule] ${docs.length} in ${new Date() - start}ms - ${speed} docs/s`)
+
+                    // complete
+
+                    // kill
+
+                    // ?? log error ??
 
                     break
             }

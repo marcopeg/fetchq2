@@ -3,6 +3,7 @@ import { getClient } from './get-client'
 describe('Upsert Documents', () => {
     const qname = 'q1'
     let client
+    
     beforeAll(async () => {
         client = await getClient()
     })

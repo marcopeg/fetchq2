@@ -25,6 +25,7 @@ updated_docs AS (
         iterations = iterations + 1,
         status = origin.status,
         next_iteration = origin.next_iteration,
+        last_iteration = NOW(),
         payload = origin.payload::jsonb
     FROM all_docs AS origin
     WHERE origin.subject = target.subject
@@ -65,7 +66,7 @@ increment_scd AS (
 const doc2str = (acc, doc) => {
     const subject = sqlSubject(doc.subject)
     const payload =  sqlPayload(doc.payload)
-    const nextIteration = sqlNextIteration(doc.nextIteration)
+    const nextIteration = sqlNextIteration(doc.next_iteration)
     return acc + `,(${subject},${payload},${nextIteration})`
 }
 

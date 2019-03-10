@@ -1,3 +1,4 @@
+import createIndex from './index-create'
 
 const q = `
 CREATE TABLE ":schemaName_data".":queueName__docs" (
@@ -16,12 +17,17 @@ CREATE TABLE ":schemaName_data".":queueName__metrics" (
 );
 `
 
-export default ctx => async (queueName) => {
+export default ctx => async (queueName, options = {}) => {
     try {
         await ctx.query(q
             .replace(/:schemaName/g, ctx.schema)
             .replace(/:queueName/g, queueName)
         )
+
+        if (options.index !== false) {
+            await createIndex(ctx)(queueName)
+        }
+
     } catch (err) {
         if (!err.original || err.original.code !== '42P07') {
             const error = new Error(`[Fetchq] failed to create queue: ${queueName} - ${err.message}`)

@@ -6,5 +6,12 @@
     "plugins": [
         [ "module-resolver", { "root": ["ssr"] } ],
         "babel-plugin-dynamic-import-node-babel-7"
-    ]
+    ],
+    "env": {
+        "test": {
+            "plugins": [
+                "@babel/plugin-transform-runtime"
+            ]
+        }
+    }
 }

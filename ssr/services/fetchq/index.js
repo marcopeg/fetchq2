@@ -5,23 +5,27 @@ import { Fetchq } from './fetchq.class'
 
 let client = null
 
-export const register = ({ registerAction, createHook }) => {
+export const init = () => {
+    client = new Fetchq()
+}
+
+export const start = () => {
+    client.setQueryFn(query)
+}
+
+export const register = ({ registerAction }) => {
     registerAction({
         hook: INIT_SERVICE,
         name: SERVICE_NAME,
         trace: __filename,
-        handler: async () => {
-            client = new Fetchq()
-        },
+        handler: init,
     })
 
     registerAction({
         hook: START_SERVICE,
         name: SERVICE_NAME,
         trace: __filename,
-        handler: async () => {
-            client.setQueryFn(query)
-        },
+        handler: start,
     })
 }
 

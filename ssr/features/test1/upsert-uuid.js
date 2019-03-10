@@ -54,6 +54,17 @@ export const start = (pool = 1000, batch = 100, options = {}) => {
     state.poolMaxSize = pool
     state.batch = batch
     state.options = options
+
+    // reset local state
+    clearInterval(state.nextLoop)
+    state.poolSize = 0
+    state.iterations = 0
+    state.totalDuration = 0
+    state.avgDuration = 0
+    state.avgDurationStats = []
+    state.avgSpeed = 0
+    state.avgSpeedStats = []
+
     loop()
     return new Promise((resolve) => {
         const log = setInterval(() => {
@@ -74,4 +85,15 @@ export const stop = () => {
     clearTimeout(state.nextLoop)
 }
 
-export const getState = () => ({ ...state })
+export const getState = () => ({
+    options: state.options,
+    poolMaxSize: state.poolMaxSize,
+    poolSize: state.poolSize,
+    batch: state.batch,
+    iterations: state.iterations,
+    totalDuration: state.totalDuration,
+    avgDuration: state.avgDuration,
+    avgDurationStats: state.avgDurationStats,
+    avgSpeed: state.avgSpeed,
+    avgSpeedStats: state.avgSpeedStats,
+})

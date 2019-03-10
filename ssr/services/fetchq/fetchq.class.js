@@ -1,11 +1,17 @@
 import resetSchema from './fetchq-methods/reset-schema'
 import initSchema from './fetchq-methods/init-schema'
+
 import createQueue from './fetchq-methods/queue/create'
+import indexQueue from './fetchq-methods/queue/index-create'
+import dropQueueIndex from './fetchq-methods/queue/index-drop'
+
 import insertDocuments from './fetchq-methods/documents/insert'
 import upsertDocuments from './fetchq-methods/documents/upsert'
 import pickDocument from './fetchq-methods/documents/pick'
 import scheduleDocument from './fetchq-methods/documents/schedule'
+
 import getMetrics from './fetchq-methods/metrics/get'
+
 import utilsPlan from './fetchq-methods/utils/plan'
 import utilsSchedule from './fetchq-methods/utils/schedule'
 import utilsLiteral from './fetchq-methods/utils/literal'
@@ -15,8 +21,8 @@ import utilsNull from './fetchq-methods/utils/null'
 import utilsPayload from './fetchq-methods/utils/payload'
 
 export class Fetchq {
-    constructor () {
-        this.schema = 'fetchq'
+    constructor (config = {}) {
+        this.setSchema(config.schema)
         this.query = () => {
             throw new Error('[Fetcqh] is missing a query method')
         }
@@ -25,7 +31,9 @@ export class Fetchq {
         this.resetSchema = resetSchema(this)
 
         this.queue = {
-            create: createQueue(this)
+            create: createQueue(this),
+            index: indexQueue(this),
+            dropIndex: dropQueueIndex(this),
         }
 
         this.docs = {

@@ -66,7 +66,7 @@ export default ctx => {
                 .replace(/:queryStats/g, options.metrics === false ? '' : (
                     _qStats.replace(/:queueName/g, queueName)
                 ))
-            
+
             const res = await ctx.query(query)
             return res[0]
         } catch (err) {

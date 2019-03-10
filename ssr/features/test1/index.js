@@ -1,14 +1,17 @@
+import expect from 'expect'
+import { test } from 'lib/test'
 import { START_FEATURE } from '@marcopeg/hooks'
 import { getClient } from 'services/fetchq'
 import { logInfo } from 'services/logger'
 import { FEATURE_NAME } from './hooks'
-import * as ingestUUID from './ingest-uuid'
-import * as ingestCollide from './ingest-collide'
-import * as upsertUUID from './upsert-uuid'
-import * as upsertCollide from './upsert-collide'
+import { bulkInsert, logReport } from './bulk-insert'
 
-const size = 0
-const metrics = true
+const testSize = 1
+const testType = 'insert-copy'
+
+const pickResetSchema = false
+const pickBulkInsert = false
+const pickUseMetrics = true
 
 export const register = ({ registerAction, createHook }) => {
     registerAction({
@@ -17,70 +20,200 @@ export const register = ({ registerAction, createHook }) => {
         trace: __filename,
         handler: async () => {
             const client = getClient()
+            let poolSize= 0
+            let batchSize = 0
 
-            // await client.resetSchema()
-            // await client.initSchema()
-            // await client.queue.create('tasks')
-
-            if (size === 0) {
-                await Promise.all([
-                    ingestUUID.start(10000, 1000, { metrics }),
-                    ingestCollide.start(10000, 1000, { metrics }),
-                    upsertUUID.start(10000, 1000, { metrics }),
-                    upsertCollide.start(10000, 1000, { metrics }),
-                ])
-            } else if (size === 1) {
-                await Promise.all([
-                    ingestUUID.start(100000 * 5, 10000, { metrics }),
-                    ingestCollide.start(100000 * 5, 10000, { metrics }),
-                    upsertUUID.start(100000 * 5, 1000, { metrics }),
-                    upsertCollide.start(100000 * 5, 1000, { metrics }),
-                ])
-            } else if (size === 2) {
-                await Promise.all([
-                    ingestUUID.start(1000000 * 5, 25000, { metrics }),
-                    ingestCollide.start(1000000 * 5, 25000, { metrics }),
-                    upsertUUID.start(1000000 * 5, 1000, { metrics }),
-                    upsertCollide.start(1000000 * 5, 1000, { metrics }),
-                ])
+            switch (testSize) {
+                case 0:
+                    poolSize = 10000
+                    batchSize = 1000
+                    break
+                case 1:
+                    poolSize = 500000
+                    batchSize = 10000
+                    break
+                case 2:
+                    poolSize = 1000000 * 5
+                    batchSize = 25000
+                    break
             }
 
-            logInfo('')
-            logInfo('---------')
-            logInfo('> RESULTS')
-            logInfo('---------')
+            let report1
+            let report2
+            switch (testType) {
+                case 'insert-metrics':
+                    logInfo('>>>>>> Test 1 <<<<<<<')
+                    report1 = await bulkInsert({
+                        poolSize,
+                        batchSize,
+                        resetSchema: true,
+                    })
+        
+                    logInfo('>>>>>> Test 2 <<<<<<<')
+                    report2 = await bulkInsert({
+                        poolSize,
+                        batchSize,
+                        useMetrics: false,
+                        resetSchema: true,
+                    })
+        
+                    logReport(`Insert${testSize} - with metrics`, report1)
+                    logReport(`Insert${testSize} - no metrics`, report2)
+                    break
+                
+                case 'insert-indexes':
+                    logInfo('>>>>>> Test 1 <<<<<<<')
+                    report1 = await bulkInsert({
+                        poolSize,
+                        batchSize,
+                        resetSchema: true,
+                        useIndex: true,
+                        useMetrics: false,
+                    })
+        
+                    logInfo('>>>>>> Test 2 <<<<<<<')
+                    report2 = await bulkInsert({
+                        poolSize,
+                        batchSize,
+                        resetSchema: true,
+                        useIndex: false,
+                        useMetrics: false,
+                    })
+        
+                    logReport(`Insert${testSize} - with indexes`, report1)
+                    logReport(`Insert${testSize} - no indexes`, report2)
+                    break
 
+                case 'insert-copy':
+                    logInfo('>>>>>> Test 1 <<<<<<<')
+                    report1 = await bulkInsert({
+                        poolSize,
+                        batchSize,
+                        resetSchema: true,
+                        useIndex: true,
+                        useMetrics: true,
+                    })
+        
+                    logInfo('>>>>>> Test 2 <<<<<<<')
+                    report2 = await bulkInsert({
+                        poolSize,
+                        batchSize,
+                        resetSchema: true,
+                        useIndex: false,
+                        useMetrics: false,
+                    })
+        
+                    logReport(`Insert${testSize} - with indexes`, report1)
+                    logReport(`Insert${testSize} - no indexes`, report2)
+                    break
+                
+                case 'pick':
+                    logInfo('>>>>>> Pick Test <<<<<<<')
+                    if (pickBulkInsert) {
+                        report1 = await bulkInsert({
+                            poolSize,
+                            batchSize,
+                            resetSchema: pickResetSchema,
+                            useMetrics: pickUseMetrics,
+                        })
+                        logReport('pick', report1)
+                    }
+                    const start = new Date()
+                    const docs = await client.docs.pick('tasks')
+                    console.log(new Date() - start)
+                    console.log(docs)
+
+                    break
+            }
+
+            
+
+            /*
+            let stats
+            const client = getClient()
+
+            await client.resetSchema()
+            await client.initSchema()
+            await client.queue.create('tasks')
+
+            let poolSize = 0
+            let batchSize = 0
+
+            switch (size) {
+                case 0:
+                    poolSize = 10000
+                    batchSize = 1000
+                    break
+                case 1:
+                    poolSize = 100000 * 5
+                    batchSize = 10000
+                    break
+                case 2:
+                    poolSize = 1000000 * 5
+                    batchSize = 25000
+                    break
+            }
+
+            const start = new Date()
+            await Promise.all([
+                ingestUUID.start(poolSize, batchSize, { metrics }),
+                ingestCollide.start(poolSize, batchSize, { metrics }),
+                upsertUUID.start(poolSize, batchSize, { metrics }),
+                upsertCollide.start(poolSize, batchSize, { metrics }),
+            ])
+
+            logInfo(`[task1/bulkInsert] total time: ${new Date() - start}ms`)
+
+            // Show insert performances
             const uuid = ingestUUID.getState()
             const collide = ingestCollide.getState()
-            const upsert = upsertCollide.getState()
-            const upsert1 = upsertCollide.getState()
-            logInfo(`[task1/uuid] ${uuid.poolSize} inserted documents in ${uuid.totalDuration} at ${uuid.avgSpeed} docs/s`)
-            logInfo(`[task1/uuid] ${uuid.avgSpeedStats.join(', ')}`)
+            const uuid1 = upsertUUID.getState()
+            const collide1 = upsertCollide.getState()
+            logInfo(`[task1/insert(uuid)] ${uuid.poolSize} inserted documents in ${uuid.totalDuration} at ${uuid.avgSpeed} docs/s`)
+            logInfo(`[task1/insert(uuid)] ${uuid.avgSpeedStats.join(', ')}`)
             logInfo('------')
-            logInfo(`[task1/collide] ${collide.poolSize} inserted documents in ${collide.totalDuration} at ${collide.avgSpeed} docs/s`)
-            logInfo(`[task1/collide] ${collide.avgSpeedStats.join(', ')}`)
+            logInfo(`[task1/insert(collide)] ${collide.poolSize} inserted documents in ${collide.totalDuration} at ${collide.avgSpeed} docs/s`)
+            logInfo(`[task1/insert(collide)] ${collide.avgSpeedStats.join(', ')}`)
             logInfo('------')
-            logInfo(`[task1/upsert] ${upsert.poolSize} upserted documents in ${upsert.totalDuration} at ${upsert.avgSpeed} docs/s`)
-            logInfo(`[task1/upsert] ${upsert.avgSpeedStats.join(', ')}`)
+            logInfo(`[task1/upsert(uuid)] ${uuid1.poolSize} upserted documents (uuid) in ${uuid1.totalDuration} at ${uuid1.avgSpeed} docs/s`)
+            logInfo(`[task1/upsert(uuid)] ${uuid1.avgSpeedStats.join(', ')}`)
             logInfo('------')
-            logInfo(`[task1/upsert1] ${upsert1.poolSize} upserted with UUID documents in ${upsert1.totalDuration} at ${upsert1.avgSpeed} docs/s`)
-            logInfo(`[task1/upsert1] ${upsert1.avgSpeedStats.join(', ')}`)
+            logInfo(`[task1/upsert(collide)] ${collide1.poolSize} upserted documents (random) in ${collide1.totalDuration} at ${collide1.avgSpeed} docs/s`)
+            logInfo(`[task1/upsert(collide)] ${collide1.avgSpeedStats.join(', ')}`)
             logInfo('')
 
-            const r1 = await client.query('SELECT COUNT(*) FROM fetchq_data.tasks__docs')
-            const r2 = await client.query('SELECT COUNT(*) FROM fetchq_data.tasks__docs WHERE next_iteration < NOW()')
-            const r3 = await client.query('SELECT COUNT(*) FROM fetchq_data.tasks__docs WHERE next_iteration >= NOW()')
-            logInfo(`--> Tot. documents: ${Number(r1[0][0].count) === uuid.poolSize + collide.poolSize}`)
-            logInfo(`--> Tot. metrics:   ${Number(r1[0][0].count) === Number(r2[0][0].count) + Number(r3[0][0].count)}`)
+
+            // Test basic behaviour
+            if (metrics) {
+                stats = await client.metrics.get('tasks')
+                test('Min docs in the queue', () => expect(stats.cnt.value).toBeGreaterThanOrEqual(poolSize * 4 * 0.9))
+                test('Some docs should be updated', () => expect(stats.upd.value).toBeGreaterThan(0))
+                test('Some docs should be planned', () => expect(stats.pln.value).toBeGreaterThan(poolSize / 3))
+                test('Some docs should be pending', () => expect(stats.pnd.value).toBeGreaterThan(poolSize / 3))
+            }
+
+            // logInfo('')
+            // logInfo('---------')
+            // logInfo('> RESULTS')
+            // logInfo('---------')
+
             
-            try {
-                const stats = await client.metrics.get('tasks')
-                logInfo(`--> Tot. metrics:   ${Number(r1[0][0].count) === stats.cnt.value}`)
-                logInfo(`--> Tot. pending:   ${Number(r2[0][0].count) === stats.pnd.value}`)
-                logInfo(`--> Tot. planned:   ${Number(r3[0][0].count) === stats.pln.value} - ${Number(r3[0][0].count)}/${stats.pln.value}`)
-                logInfo('')
-                console.log(stats)
-            } catch (err) {}
+
+            // const r1 = await client.query('SELECT COUNT(*) FROM fetchq_data.tasks__docs')
+            // const r2 = await client.query('SELECT COUNT(*) FROM fetchq_data.tasks__docs WHERE next_iteration < NOW()')
+            // const r3 = await client.query('SELECT COUNT(*) FROM fetchq_data.tasks__docs WHERE next_iteration >= NOW()')
+            // logInfo(`--> Tot. documents: ${Number(r1[0][0].count) === uuid.poolSize + collide.poolSize}`)
+            // logInfo(`--> Tot. metrics:   ${Number(r1[0][0].count) === Number(r2[0][0].count) + Number(r3[0][0].count)}`)
+            
+            // try {
+            //     const stats = await client.metrics.get('tasks')
+            //     logInfo(`--> Tot. metrics:   ${Number(r1[0][0].count) === stats.cnt.value}`)
+            //     logInfo(`--> Tot. pending:   ${Number(r2[0][0].count) === stats.pnd.value}`)
+            //     logInfo(`--> Tot. planned:   ${Number(r3[0][0].count) === stats.pln.value} - ${Number(r3[0][0].count)}/${stats.pln.value}`)
+            //     logInfo('')
+            //     console.log(stats)
+            // } catch (err) {}
+            */
         },
     })
 }

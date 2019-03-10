@@ -1,30 +1,15 @@
 
-import { FetchqPlan } from '../utils/plan'
 import { sqlSubject } from '../lib/sql-subject'
 import { sqlPayload } from '../lib/sql-payload'
 import { sqlNextIteration } from '../lib/sql-next-iteration'
 import { sqlSmallQuery } from '../lib/sql-small-query'
 
-// completed_tasks AS (
-//     CASE WHEN origin.next_iteration <= NOW() THEN 1
-//     ELSE 0
-// END AS status 
-// attempts = 0,
-// iterations = iterations + 1,
-// next_iteration = :plan
-//         SELECT subject FROM ":schemaName_data".":queueName__docs"
-//         WHERE subject = :subject
-//         LIMIT 1
-//         FOR UPDATE FOR UPDATE SKIP LOCKED
-//     ) RETURNING *
-// ),
-
 const q = `
 WITH
 all_docs (subject, payload, next_iteration, status) AS (
-	SELECT
-		origin.*, 
-		CASE WHEN origin.next_iteration <= NOW() THEN 1
+    SELECT
+        origin.*, 
+        CASE WHEN origin.next_iteration <= NOW() THEN 1
              ELSE 0
         END AS status 
     FROM ( VALUES :values ) AS origin (subject, payload, next_iteration)
@@ -85,22 +70,18 @@ const doc2str = (acc, doc) => {
 }
 
 export default ctx => {
-    const [ _q, _qStats ] = sqlSmallQuery(ctx, q, qStats, true)
+    const [ _q, _qStats ] = sqlSmallQuery(ctx, q, qStats)
 
     return async (queueName, docs, options = {}) => {
         try {
-            console.log(docs)
             const values = docs.reduce(doc2str, '').substr(1)
             const query = _q
                 .replace(/:queueName/g, queueName)
                 .replace(/:values/g, values)
-                // .replace(/:subject/g, sqlSubject(doc.subject))
-                // .replace(/:plan/g, plan.toString())
                 .replace(/:queryStats/g, options.metrics === false ? '' : (
                     _qStats.replace(/:queueName/g, queueName)
                 ))
             
-            console.log(query)
             const res = await ctx.query(query)
             return res[0]
         } catch (err) {

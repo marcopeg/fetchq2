@@ -4,6 +4,7 @@
  * 
  * Run it with a "true" as last value to skip compression
  */
+
 export const sqlSmallQuery = (ctx, ...queries) => {
     // debug mode
     if (queries[queries.length - 1] === true) {
@@ -16,8 +17,13 @@ export const sqlSmallQuery = (ctx, ...queries) => {
     // production mode
     return queries.map(query => (
         query
+            .split('\n')
+            .map(line => line.trim())
+            .filter(line => line.substr(0, 2) !== '--')
+            .join(' ')
             .replace(/:schemaName/g, ctx.schema)
             .replace(/\ \ \ \ /g, '')
             .replace(/\n/g, ' ')
+            .trim()
     ))
 }

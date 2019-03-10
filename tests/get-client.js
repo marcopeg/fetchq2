@@ -1,10 +1,12 @@
 import * as pg from '../ssr/services/postgres'
 import * as fetchq from '../ssr/services/fetchq'
 
+let client
+
 export const getClient = async () => {
     // Return memoized client
-    if (getClient.client) {
-        return getClient.client
+    if (client) {
+        return client
     }
 
     // Init Postgres Connection
@@ -17,20 +19,19 @@ export const getClient = async () => {
         password: process.env.PG_PASSWORD,
         maxAttempts: Number(process.env.PG_MAX_CONN_ATTEMPTS),
         attemptDelay: Number(process.env.PG_CONN_ATTEMPTS_DELAY),
-        // logging: logVerbose,
+        logging: () => {},
         models: [],
     }
     await pg.init(options)
     await pg.start(options)
 
     // Init Fetchq Client
-    await fetchq.init()
+    await fetchq.init({
+        schema: 'fetchq_jest',
+    })
     await fetchq.start()
 
     // Memoize the client
-    getClient.client = fetchq.getClient({
-        schema: 'fetchq_jest',
-    })
-
-    return getClient.client
+    client = fetchq.getClient()
+    return client
 }

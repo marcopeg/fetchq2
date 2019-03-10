@@ -43,13 +43,23 @@ updated_docs AS (
         SELECT * FROM skipped_docs
     ) AS _value
     WHERE docs.subject = _value.subject
-    RETURNING _value.*
+    RETURNING 
+        _value.subject,
+        docs.payload,
+        docs.status,
+        _value.attempts,
+        _value.iterations,
+        docs.next_iteration,
+        _value.last_iteration,
+        _value.status AS status_old,
+        docs.status AS status_new
 ),
 results AS (
     SELECT
         'updated' AS action,
         t1.subject,
         t1.payload,
+        t1.status,
         t1.attempts,
         t1.iterations,
         t1.next_iteration,
@@ -60,6 +70,7 @@ results AS (
         'created' AS action,
         t2.subject,
         t2.payload,
+        t2.status,
         t2.attempts,
         t2.iterations,
         t2.next_iteration,
@@ -104,7 +115,7 @@ increment_pln AS (
     SELECT 'pln', (
         (
             SELECT COUNT(subject) FROM inserted_docs
-            WHERE status = 1
+            WHERE status = 0
         )
         +
         (

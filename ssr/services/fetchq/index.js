@@ -5,8 +5,8 @@ import { Fetchq } from './fetchq.class'
 
 let client = null
 
-export const init = () => {
-    client = new Fetchq()
+export const init = (options) => {
+    client = new Fetchq(options)
 }
 
 export const start = () => {

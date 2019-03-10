@@ -21,7 +21,6 @@ describe('Process Docs', () => {
 
     it('should be possible to pick documents in order', async () => {
         const docs = await client.docs.pick(qname, 3)
-        const metrics = await client.metrics.get(qname)
 
         expect(docs.length).toBe(2)
         expect(docs[0].subject).toBe('t3')
@@ -32,6 +31,7 @@ describe('Process Docs', () => {
         expect(docs[1].iterations).toBe(0)
         expect(docs[1].status).toBe(2)
 
+        const metrics = await client.metrics.get(qname)
         expect(metrics.pkd.value).toBe(2)
         expect(metrics.wip.value).toBe(2)
         expect(metrics.pnd.value).toBe(0)
@@ -54,6 +54,36 @@ describe('Process Docs', () => {
         expect(res[0].iterations).toBe(1)
         expect(res[0].attempts).toBe(0)
         expect(res[0].status).toBe(0)
+
+        const metrics = await client.metrics.get(qname)
+        expect(metrics.pkd.value).toBe(1)
+        expect(metrics.wip.value).toBe(0)
+        expect(metrics.pnd.value).toBe(1)
+        expect(metrics.pln.value).toBe(2)
+    })
+
+    it('should be possible to mark documents as completed', async () => {
+        const docs = await client.docs.pick(qname)
+
+        const res = await client.docs.complete(qname, [{
+            subject: docs[0].subject,
+            payload: { ...docs[0].payload, completed: true },
+        }])
+
+        expect(res[0].subject).toBe(docs[0].subject)
+        expect(res[0].payload).toHaveProperty('completed', true)
+        expect(res[0]).toHaveProperty('next_iteration')
+        expect(res[0].last_iteration).not.toBeNull()
+        expect(res[0].iterations).toBe(1)
+        expect(res[0].attempts).toBe(0)
+        expect(res[0].status).toBe(2)
+
+        const metrics = await client.metrics.get(qname)
+        expect(metrics.pkd.value).toBe(1)
+        expect(metrics.wip.value).toBe(0)
+        expect(metrics.pnd.value).toBe(1)
+        expect(metrics.pln.value).toBe(1)
+        expect(metrics.cpl.value).toBe(1)
     })
 
 })

@@ -9,6 +9,7 @@ import insertDocuments from './fetchq-methods/documents/insert'
 import upsertDocuments from './fetchq-methods/documents/upsert'
 import pickDocument from './fetchq-methods/documents/pick'
 import scheduleDocument from './fetchq-methods/documents/schedule'
+import completeDocument from './fetchq-methods/documents/complete'
 
 import getMetrics from './fetchq-methods/metrics/get'
 
@@ -41,6 +42,7 @@ export class Fetchq {
             upsert: upsertDocuments(this),
             pick: pickDocument(this),
             schedule: scheduleDocument(this),
+            complete: completeDocument(this),
         }
 
         this.metrics = {

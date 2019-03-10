@@ -76,7 +76,7 @@ describe('Process Docs', () => {
         expect(res[0].last_iteration).not.toBeNull()
         expect(res[0].iterations).toBe(1)
         expect(res[0].attempts).toBe(0)
-        expect(res[0].status).toBe(2)
+        expect(res[0].status).toBe(3)
 
         const metrics = await client.metrics.get(qname)
         expect(metrics.pkd.value).toBe(1)
@@ -84,6 +84,30 @@ describe('Process Docs', () => {
         expect(metrics.pnd.value).toBe(1)
         expect(metrics.pln.value).toBe(1)
         expect(metrics.cpl.value).toBe(1)
+    })
+    
+    it('should be possible to mark documents as killed', async () => {
+        const docs = await client.docs.pick(qname)
+
+        const res = await client.docs.kill(qname, [{
+            subject: docs[0].subject,
+            payload: { ...docs[0].payload, completed: true },
+        }])
+
+        expect(res[0].subject).toBe(docs[0].subject)
+        expect(res[0].payload).toHaveProperty('completed', true)
+        expect(res[0]).toHaveProperty('next_iteration')
+        expect(res[0].last_iteration).not.toBeNull()
+        expect(res[0].iterations).toBe(1)
+        expect(res[0].attempts).toBe(0)
+        expect(res[0].status).toBe(4)
+
+        const metrics = await client.metrics.get(qname)
+        expect(metrics.pkd.value).toBe(1)
+        expect(metrics.wip.value).toBe(0)
+        expect(metrics.pnd.value).toBe(1)
+        expect(metrics.pln.value).toBe(1)
+        expect(metrics.kll.value).toBe(1)
     })
 
 })

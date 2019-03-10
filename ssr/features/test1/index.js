@@ -1,5 +1,3 @@
-import expect from 'expect'
-import { test } from 'lib/tester'
 import { START_FEATURE } from '@marcopeg/hooks'
 import { getClient } from 'services/fetchq'
 import { logInfo } from 'services/logger'
@@ -122,6 +120,7 @@ export const register = ({ registerAction, createHook }) => {
 
                     let start
                     let docs
+                    let res
                     let lapsed
                     let speed
 
@@ -134,17 +133,33 @@ export const register = ({ registerAction, createHook }) => {
 
                     // schedule
                     start = new Date()
-                    await client.docs.schedule('tasks', docs.map(doc => ({
+                    res = await client.docs.schedule('tasks', docs.map(doc => ({
                         ...doc,
                         next_iteration: client.utils.plan('1y'),
                     })))
                     lapsed = new Date() - start
-                    speed = Math.floor(docs.length * 1000 / lapsed)
-                    logInfo(`[schedule] ${docs.length} in ${new Date() - start}ms - ${speed} docs/s`)
+                    speed = Math.floor(res.length * 1000 / lapsed)
+                    logInfo(`[schedule] ${res.length} in ${new Date() - start}ms - ${speed} docs/s`)
 
                     // complete
+                    docs = await client.docs.pick('tasks', processSize)
+                    start = new Date()
+                    res = await client.docs.complete('tasks', docs.map(doc => ({
+                        ...doc,
+                    })))
+                    lapsed = new Date() - start
+                    speed = Math.floor(res.length * 1000 / lapsed)
+                    logInfo(`[complete] ${res.length} in ${new Date() - start}ms - ${speed} docs/s`)
 
                     // kill
+                    docs = await client.docs.pick('tasks', processSize)
+                    start = new Date()
+                    res = await client.docs.kill('tasks', docs.map(doc => ({
+                        ...doc,
+                    })))
+                    lapsed = new Date() - start
+                    speed = Math.floor(res.length * 1000 / lapsed)
+                    logInfo(`[kill] ${res.length} in ${new Date() - start}ms - ${speed} docs/s`)
 
                     // ?? log error ??
 

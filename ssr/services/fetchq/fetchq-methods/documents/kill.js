@@ -1,7 +1,6 @@
 
 import { sqlSubject } from '../lib/sql-subject'
 import { sqlPayload } from '../lib/sql-payload'
-import { sqlNextIteration } from '../lib/sql-next-iteration'
 import { sqlSmallQuery } from '../lib/sql-small-query'
 
 const q = `
@@ -19,7 +18,7 @@ updated_docs AS (
     SET 
         attempts = 0,
         iterations = iterations + 1,
-        status = 3,
+        status = 4,
         last_iteration = NOW(),
         payload = origin.payload::jsonb
     FROM all_docs AS origin
@@ -38,9 +37,9 @@ decrement_wip AS (
     ON CONFLICT (metric) DO
     UPDATE SET amount = t.amount - EXCLUDED.amount, last_update = EXCLUDED.last_update
 ),
-increment_cpl AS (
+increment_kll AS (
     INSERT INTO ":schemaName_data".":queueName__metrics" AS t (metric, amount, last_update)
-    SELECT 'cpl', (SELECT COUNT(subject) FROM updated_docs), NOW()
+    SELECT 'kll', (SELECT COUNT(subject) FROM updated_docs), NOW()
     ON CONFLICT (metric) DO
     UPDATE SET amount = t.amount + EXCLUDED.amount, last_update = EXCLUDED.last_update
 )
@@ -68,7 +67,7 @@ export default ctx => {
             const res = await ctx.query(query)
             return res[0]
         } catch (err) {
-            const error = new Error(`[Fetchq] failed to complete documents: ${queueName} - ${err.message}`)
+            const error = new Error(`[Fetchq] failed to kill documents: ${queueName} - ${err.message}`)
             error.original = err
             throw error
         }

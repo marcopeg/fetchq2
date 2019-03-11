@@ -6,7 +6,7 @@
 # Running container's name
 organization?=marcopeg
 name?=stuffer
-version:= $(shell node -p "require('../../package.json').version")
+version:= $(shell node -p "require('./package.json').version")
 
 # Docker image tag name
 tag?=${organization}/${name}
@@ -17,6 +17,14 @@ loglevel?=debug
 jwts?=stuffer
 ext?=cache
 stuffrc=$(shell pwd)/.stuffrc
+
+# Run local pg
+db:
+	docker run -d \
+		--name stuffer2db \
+		-p 5432:5432 \
+		-e POSTGRES_PASSWORD:postgres \
+		postgres
 
 # Build the project using cache
 image:

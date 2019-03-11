@@ -1,5 +1,7 @@
-import resetSchema from './fetchq-methods/reset-schema'
-import initSchema from './fetchq-methods/init-schema'
+import resetSchema from './fetchq-methods/lifecycle/reset-schema'
+import initSchema from './fetchq-methods/lifecycle/init-schema'
+import dropSchema from './fetchq-methods/lifecycle/drop-schema'
+import start from './fetchq-methods/lifecycle/start'
 
 import createQueue from './fetchq-methods/queue/create'
 import indexQueue from './fetchq-methods/queue/index-create'
@@ -24,15 +26,40 @@ import utilsUuid from './fetchq-methods/utils/uuid'
 import utilsNull from './fetchq-methods/utils/null'
 import utilsPayload from './fetchq-methods/utils/payload'
 
+const defaultQueryRunner = () => {
+    throw new Error('[Fetcqh] is missing a query method')
+}
+
 export class Fetchq {
     constructor (config = {}) {
-        this.setSchema(config.schema)
-        this.query = () => {
-            throw new Error('[Fetcqh] is missing a query method')
-        }
+        //
+        // Properties
+        // =======================
+        //
+
+        // Sequelize compatible query runner.
+        this.query = config.query || defaultQueryRunner
+        
+        // keep an eye on a system that is ready
+        this.isReady = false
+        
+        this.schema = config.schema || 'fetchq'
+
+        // Will contain settings for each queue:
+        // { foo: { maxAttempts: 5, ... }}
+        this.queues = {}
+
+        
+
+        //
+        // Methods
+        // =======================
+        // 
 
         this.initSchema = initSchema(this)
+        this.dropSchema = dropSchema(this)
         this.resetSchema = resetSchema(this)
+        this.start = start(this)
 
         this.queue = {
             create: createQueue(this),
@@ -65,10 +92,6 @@ export class Fetchq {
             schedule: utilsSchedule(this),
             literal: utilsLiteral(this),
         }
-    }
-
-    setSchema (schemaName = 'public') {
-        this.schema = schemaName
     }
 
     setQueryFn (query) {

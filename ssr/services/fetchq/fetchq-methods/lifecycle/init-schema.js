@@ -1,4 +1,4 @@
-import { sqlSmallQuery } from './lib/sql-small-query'
+import { sqlSmallQuery } from '../lib/sql-small-query'
 
 const q1 = `
 -- namespaces
@@ -11,6 +11,8 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- queue index table
 CREATE TABLE IF NOT EXISTS ":schemaName_catalog"."fq_queues" (
     subject character varying(50) PRIMARY KEY,
+    max_attempts integer DEFAULT 5,
+    lock_duration character varying(20) DEFAULT '5m',
     created_at timestamp with time zone,
     updated_at timestamp with time zone
 );

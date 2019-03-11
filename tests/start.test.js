@@ -46,7 +46,7 @@ describe('Fetchq Start', () => {
         // @SQL: Simulate a change in the table that is not performed
         //       by the library itself.
         await client.query(`UPDATE "${client.schema}_catalog"."fq_queues" SET max_attempts = 1;`)
-        await pause(50)
+        await pause(10)
 
         expect(client.queues.foo.max_attempts).toBe(1)
     })

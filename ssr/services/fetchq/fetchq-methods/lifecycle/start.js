@@ -1,11 +1,12 @@
+/**
+ * - retrieve queues settings and keep them up-to-date via pubsub
+ */
+
 import { sqlSmallQuery } from '../lib/sql-small-query'
+import { logError, logDebug } from '@marcopeg/utils/lib/logger'
 
 const q1 = `
-WITH
-settings AS (
-    SELECT * FROM ":schemaName_catalog"."fq_queues"
-)
-SELECT * FROM settings;
+SELECT * FROM ":schemaName_catalog"."fq_queues";
 `
 
 export default ctx => {
@@ -18,8 +19,20 @@ export default ctx => {
                 ...acc,
                 [curr.subject]: curr,
             }), {})
+
+            // NOTE: it tries to create a new date instace as kinda of
+            // a dynamic test that will check if the payload that we receive
+            // is valid json from the settings table
+            ctx.pubsub.addChannel('fetchq_settings', (payload) => {
+                try {
+                    new Date(payload.created_at)
+                    ctx.queues[payload.subject] = payload
+                } catch (err) {
+                    logError(`[fetchq] queues settings trigger: ${err.msg}`)
+                    logDebug(err)
+                }
+            })
             
-            console.log(ctx.queues)
             return ctx.isReady = true
         } catch (err) {
             if (err.original && err.original.code === '42P01') {

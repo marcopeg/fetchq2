@@ -1,5 +1,4 @@
 import { INIT_SERVICE, START_SERVICE } from '@marcopeg/hooks'
-import { query } from '../postgres'
 import { SERVICE_NAME } from './hooks'
 import { Fetchq } from './fetchq.class'
 
@@ -9,9 +8,7 @@ export const init = (options) => {
     client = new Fetchq(options)
 }
 
-export const start = () => {
-    client.setQueryFn(query)
-}
+export const start = () => {}
 
 export const register = ({ registerAction }) => {
     registerAction({

@@ -39,6 +39,9 @@ export class Fetchq {
 
         // Sequelize compatible query runner.
         this.query = config.query || defaultQueryRunner
+
+        // pg-pubsub instance
+        this.pubsub = config.pubsub
         
         // keep an eye on a system that is ready
         this.isReady = false
@@ -92,9 +95,5 @@ export class Fetchq {
             schedule: utilsSchedule(this),
             literal: utilsLiteral(this),
         }
-    }
-
-    setQueryFn (query) {
-        this.query = query
     }
 }

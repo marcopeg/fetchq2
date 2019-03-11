@@ -27,6 +27,39 @@ CREATE TABLE IF NOT EXISTS ":schemaName_catalog"."fq_tasks" (
     next_iteration timestamp with time zone,
     last_iteration timestamp with time zone
 );
+
+
+
+--
+-- SETTINGS TRIGGERS
+-- Every time a queue setting change we will refresh the Fetchq client
+-- in-memory data rapresentation (it keeps a json version of the rows)
+--
+-- This is used to automatically build queries like the maintenance for
+-- orphans and dead that are dependent on the "max_attempt" setting.
+--
+
+CREATE OR REPLACE FUNCTION fetchq_fq_queues_insert_trigger_fn()
+RETURNS trigger AS $$
+BEGIN
+    PERFORM pg_notify('fetchq_settings', row_to_json(NEW)::text);
+    RETURN NULL;
+END; $$ LANGUAGE 'plpgsql';
+
+CREATE TRIGGER fetchq_fq_queues_insert_trigger AFTER INSERT
+ON ":schemaName_catalog"."fq_queues" FOR EACH ROW
+EXECUTE PROCEDURE fetchq_fq_queues_insert_trigger_fn();
+
+CREATE OR REPLACE FUNCTION fetchq_fq_queues_update_trigger_fn()
+RETURNS trigger AS $$
+BEGIN
+    PERFORM pg_notify('fetchq_settings', row_to_json(NEW)::text);
+    RETURN NULL;
+END; $$ LANGUAGE 'plpgsql';
+
+CREATE TRIGGER fetchq_fq_queues_update_trigger AFTER UPDATE
+ON ":schemaName_catalog"."fq_queues" FOR EACH ROW
+EXECUTE PROCEDURE fetchq_fq_queues_update_trigger_fn();
 `
 
 export default ctx => {

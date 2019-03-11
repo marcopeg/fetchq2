@@ -1,3 +1,4 @@
+import PgPubsub from 'pg-pubsub'
 import * as pg from '../ssr/services/postgres'
 import * as fetchq from '../ssr/services/fetchq'
 
@@ -28,6 +29,8 @@ export const getClient = async () => {
     // Init Fetchq Client
     await fetchq.init({
         schema: 'fetchq_jest',
+        query: pg.query,
+        pubsub: new PgPubsub(`postgres://${process.env.PG_USERNAME}:${process.env.PG_PASSWORD}@${process.env.PG_HOST}:${process.env.PG_PORT}/${process.env.PG_DATABASE}`),
     })
     await fetchq.start()
 

@@ -15,7 +15,7 @@ export default ctx => {
     const startHandler = async () => {
         try {
             const res = await ctx.query(_q1)
-            ctx.queues = res[0].reduce((acc, curr) => ({
+            ctx.queues = res.rows.reduce((acc, curr) => ({
                 ...acc,
                 [curr.subject]: curr,
             }), {})
@@ -23,7 +23,7 @@ export default ctx => {
             // NOTE: it tries to create a new date instace as kinda of
             // a dynamic test that will check if the payload that we receive
             // is valid json from the settings table
-            ctx.pubsub.addChannel('fetchq_settings', (payload) => {
+            ctx.subscribe('fetchq_settings', (payload) => {
                 try {
                     new Date(payload.created_at)
                     ctx.queues[payload.subject] = payload
@@ -35,7 +35,7 @@ export default ctx => {
             
             return ctx.isReady = true
         } catch (err) {
-            if (err.original && err.original.code === '42P01') {
+            if (err.code === '42P01') {
                 return false
             }
             throw err

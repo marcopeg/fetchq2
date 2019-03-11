@@ -6,6 +6,7 @@ describe('Upsert Documents', () => {
     
     beforeAll(async () => {
         client = await getClient()
+        await client.start()
     })
 
     beforeEach(async () => {

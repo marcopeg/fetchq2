@@ -62,7 +62,7 @@ export default ctx => {
             }
     
         } catch (err) {
-            if (!err.original || err.original.code !== '42P07') {
+            if (err.code !== '42P07') {
                 const error = new Error(`[Fetchq] failed to create queue: ${queueName} - ${err.message}`)
                 error.original = err
                 throw error

@@ -46,6 +46,7 @@ BEGIN
     RETURN NULL;
 END; $$ LANGUAGE 'plpgsql';
 
+DROP TRIGGER IF EXISTS fetchq_fq_queues_insert_trigger ON ":schemaName_catalog"."fq_queues";
 CREATE TRIGGER fetchq_fq_queues_insert_trigger AFTER INSERT
 ON ":schemaName_catalog"."fq_queues" FOR EACH ROW
 EXECUTE PROCEDURE fetchq_fq_queues_insert_trigger_fn();
@@ -57,6 +58,7 @@ BEGIN
     RETURN NULL;
 END; $$ LANGUAGE 'plpgsql';
 
+DROP TRIGGER IF EXISTS fetchq_fq_queues_update_trigger ON ":schemaName_catalog"."fq_queues";
 CREATE TRIGGER fetchq_fq_queues_update_trigger AFTER UPDATE
 ON ":schemaName_catalog"."fq_queues" FOR EACH ROW
 EXECUTE PROCEDURE fetchq_fq_queues_update_trigger_fn();

@@ -4,6 +4,7 @@ describe('Create Queue', () => {
     let client
     beforeAll(async () => {
         client = await getClient()
+        await client.start()
     })
 
     beforeEach(async () => {

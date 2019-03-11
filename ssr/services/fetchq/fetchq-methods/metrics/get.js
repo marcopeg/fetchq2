@@ -9,7 +9,7 @@ export default ctx => async (queueName) => {
             .replace(/:schemaName/g, ctx.schema)
             .replace(/:queueName/g, queueName)
         )
-        return res[0].reduce((acc, curr) => ({
+        return res.rows.reduce((acc, curr) => ({
             ...acc,
             [curr.metric]: {
                 value: curr.amount,

@@ -5,6 +5,7 @@ describe('Insert Documents', () => {
     let client
     beforeAll(async () => {
         client = await getClient()
+        await client.start()
     })
 
     beforeEach(async () => {

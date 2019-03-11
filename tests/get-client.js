@@ -1,6 +1,6 @@
-import PgPubsub from 'pg-pubsub'
-import * as pg from '../ssr/services/postgres'
-import * as fetchq from '../ssr/services/fetchq'
+import { Fetchq } from '../ssr/services/fetchq/fetchq.class'
+import { logVerbose } from '@marcopeg/utils/lib/logger'
+import pause from '@marcopeg/utils/lib/pause'
 
 let client
 
@@ -10,31 +10,26 @@ export const getClient = async () => {
         return client
     }
 
-    // Init Postgres Connection
-    const options = {
-        connectionName: 'default',
-        host: process.env.PG_HOST,
-        port: process.env.PG_PORT,
-        database: process.env.PG_DATABASE,
-        username: process.env.PG_USERNAME,
-        password: process.env.PG_PASSWORD,
-        maxAttempts: Number(process.env.PG_MAX_CONN_ATTEMPTS),
-        attemptDelay: Number(process.env.PG_CONN_ATTEMPTS_DELAY),
-        logging: () => {},
-        models: [],
-    }
-    await pg.init(options)
-    await pg.start(options)
-
     // Init Fetchq Client
-    await fetchq.init({
+    client = new Fetchq({
         schema: 'fetchq_jest',
-        query: pg.query,
-        pubsub: new PgPubsub(`postgres://${process.env.PG_USERNAME}:${process.env.PG_PASSWORD}@${process.env.PG_HOST}:${process.env.PG_PORT}/${process.env.PG_DATABASE}`),
+        server: {
+            host: process.env.PG_HOST,
+            port: process.env.PG_PORT,
+            database: process.env.PG_DATABASE,
+            username: process.env.PG_USERNAME,
+            password: process.env.PG_PASSWORD,
+            maxAttempts: Number(process.env.PG_MAX_CONN_ATTEMPTS),
+            attemptDelay: Number(process.env.PG_CONN_ATTEMPTS_DELAY),
+            logging: logVerbose,
+        }
     })
-    await fetchq.start()
 
-    // Memoize the client
-    client = fetchq.getClient()
+    await client.connect()
+
+    // Fix the log that pg-pubsub triggers on reconnect
+    client.subscribe('test', () => {})
+    await pause(100)
+
     return client
 }

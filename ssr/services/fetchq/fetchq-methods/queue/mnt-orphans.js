@@ -52,7 +52,7 @@ export default ctx => {
                     _qStats.replace(/:queueName/g, queueName)
                 ))
             )
-            console.log(res[0])
+            console.log(res.rows)
         } catch (err) {
             const error = new Error(`[Fetchq] failed to reschedule orphans: ${queueName} - ${err.message}`)
             error.original = err

@@ -5,10 +5,13 @@ import { Fetchq } from './fetchq.class'
 let client = null
 
 export const init = (options) => {
-    client = new Fetchq(options)
+    client = new Fetchq(options.fetchq)
 }
 
-export const start = () => {}
+export const start = async () => {
+    await client.connect()
+    await client.start()
+}
 
 export const register = ({ registerAction }) => {
     registerAction({

@@ -1,5 +1,5 @@
 import expect from 'expect'
-import { test } from 'lib/test'
+import { test } from 'lib/tester'
 import { START_FEATURE } from '@marcopeg/hooks'
 import { getClient } from 'services/fetchq'
 import { FEATURE_NAME } from './hooks'
@@ -18,6 +18,7 @@ export const register = ({ registerAction, createHook }) => {
 
             await client.resetSchema()
             await client.initSchema()
+            await client.start()
             await client.queue.create('tasks')
 
             await client.docs.insert('tasks', [
@@ -42,7 +43,7 @@ export const register = ({ registerAction, createHook }) => {
             const docs = await client.docs.pick('tasks')
             await client.docs.schedule('tasks', docs.map(doc => ({
                 ...doc,
-                nextIteration: client.utils.plan('100 y'),
+                next_iteration: client.utils.plan('100 y'),
                 payload: { done: true },
             })))
 

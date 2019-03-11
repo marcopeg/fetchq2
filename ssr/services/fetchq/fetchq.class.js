@@ -1,3 +1,8 @@
+import { Pool, Client } from 'pg'
+import PgPubsub from 'pg-pubsub'
+import { logError, logDebug } from '@marcopeg/utils/lib/logger'
+import pause from '@marcopeg/utils/lib/pause'
+
 import resetSchema from './fetchq-methods/lifecycle/reset-schema'
 import initSchema from './fetchq-methods/lifecycle/init-schema'
 import dropSchema from './fetchq-methods/lifecycle/drop-schema'
@@ -32,26 +37,29 @@ const defaultQueryRunner = () => {
 
 export class Fetchq {
     constructor (config = {}) {
+        // @TODO: config validation with json-schema or similar?
+
         //
         // Properties
         // =======================
         //
 
-        // Sequelize compatible query runner.
-        this.query = config.query || defaultQueryRunner
-
-        // pg-pubsub instance
-        this.pubsub = config.pubsub
+        // Stuff from the settings
+        this.schema = config.schema || 'fetchq'
         
         // keep an eye on a system that is ready
         this.isReady = false
         
-        this.schema = config.schema || 'fetchq'
-
         // Will contain settings for each queue:
         // { foo: { maxAttempts: 5, ... }}
         this.queues = {}
 
+        // Handle internal references to the connection pool
+        this.conn = {
+            settings: config.server || {},
+            pool: null, // postgres connection
+            pubsub: null, // pg-pubsub connection
+        }
         
 
         //
@@ -95,5 +103,62 @@ export class Fetchq {
             schedule: utilsSchedule(this),
             literal: utilsLiteral(this),
         }
+    }
+
+    // Connects both "pg" and "pg-pubsub"
+    async connect () {
+        const { username, password, host, port, database } = this.conn.settings
+        const { maxAttempts, attemptDelay } = this.conn.settings
+
+        this.conn.string = [
+            'postgresql://',
+            username,
+            password ? `:${password}` : '',
+            '@',
+            host,
+            port ? `:${port}` : '',
+            database ? `/${database}` : '',
+        ].join('')
+
+        this.conn.pool = new Pool({
+            connectionString: this.conn.string,
+        })
+
+        let attempts = 0
+        let lastError = ''
+        let connected = false
+        do {
+            try {
+                logDebug(`[fetchq] pg connection attempt ${attempts + 1}/${maxAttempts}"`)
+                await this.conn.pool.query('SELECT 1 = 1')
+                connected = true
+            } catch (err) {
+                attempts += 1
+                lastError = err
+                logDebug(`[fetchq] failed connection attempt: ${err.message}`)
+                await pause(attemptDelay)
+            }
+        } while (connected === false && attempts < maxAttempts)
+
+        if (!connected) {
+            const safeConnString = this.conn.string.replace(`:${password}@`, ':xxx@')
+            const errMsg = `[fetchq] failed db connection: "${safeConnString}" - ${lastError.message}`
+            const err = new Error(errMsg)
+            err.connectionString = this.conn.string
+            err.original = lastError
+            logError(errMsg)
+            logDebug(err)
+            throw new Error(err)
+        }
+        
+        this.conn.pubsub = new PgPubsub(this.conn.string)
+    }
+
+    query (q, p) {
+        return this.conn.pool.query(q, p)
+    }
+
+    subscribe (evtName, handler) {
+        return this.conn.pubsub.addChannel(evtName, handler)
     }
 }

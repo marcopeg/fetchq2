@@ -7,6 +7,7 @@ describe('Queue Maintenance', () => {
 
     beforeAll(async () => {
         client = await getClient()
+        await client.start()
     })
 
     beforeEach(async () => {

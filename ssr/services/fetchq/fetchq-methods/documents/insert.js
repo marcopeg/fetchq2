@@ -87,7 +87,7 @@ export default ctx => {
                 ))
             
             const res = await ctx.query(query)
-            return res[0]
+            return res.rows
         } catch (err) {
             const error = new Error(`[Fetchq] failed to insert documents: ${queueName} - ${err.message}`)
             error.original = err

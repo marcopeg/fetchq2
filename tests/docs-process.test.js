@@ -6,6 +6,7 @@ describe('Process Docs', () => {
     
     beforeAll(async () => {
         client = await getClient()
+        await client.start()
     })
 
     beforeEach(async () => {

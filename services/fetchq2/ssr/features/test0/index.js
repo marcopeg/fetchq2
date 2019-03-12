@@ -12,7 +12,9 @@ export const register = ({ registerAction, createHook }) => {
         hook: START_FEATURE,
         name: FEATURE_NAME,
         trace: __filename,
-        handler: async () => {
+        handler: async (settings) => {
+            if ('test0' !== settings.feature) return
+            
             let stats
             const client = getClient()
 

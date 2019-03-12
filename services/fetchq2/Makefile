@@ -5,7 +5,7 @@
 
 # Running container's name
 organization?=marcopeg
-name?=stuffer
+name?=fetchq
 version:= $(shell node -p "require('./package.json').version")
 
 # Docker image tag name

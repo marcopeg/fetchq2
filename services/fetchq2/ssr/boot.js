@@ -14,14 +14,30 @@ const services = [
 ]
 
 const features = [
-    // require('./features/test0'),
-    // require('./features/test1'),
+    require('./features/test0'),
+    require('./features/test1'),
 ]
+
+const getConfig = (key, def) => {
+    const val = config.get(key, '---')
+    return val === '---' ? def : val
+}
 
 registerAction({
     hook: SETTINGS,
     name: '♦ boot',
     handler: async ({ settings }) => {
+        settings.feature = getConfig('RUN_FEATURE', 'test1')
+
+        settings.test1 = {
+            testSize: getConfig('TEST1_TEST_SIZE', 0),
+            testType: getConfig('TEST1_TEST_TYPE', 'process'),
+            processResetSchema: getConfig('TEST1_PROCESS_RESET_SCHEMA', false),
+            processBulkInsert: getConfig('TEST1_PROCESS_BULK_INSERT', true),
+            processUseMetrics: getConfig('TEST1_PROCESS_USE_METRICS', true),
+            processSize: getConfig('TEST1_PROCESS_SIZE', 1000),
+        }
+
         settings.fetchq = {
             schema: 'fetchq_app',
             server: {

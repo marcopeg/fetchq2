@@ -4,20 +4,23 @@ import { logInfo } from 'services/logger'
 import { FEATURE_NAME } from './hooks'
 import { bulkInsert, logReport } from './bulk-insert'
 
-const testSize = 0
-const testType = 'process'
-
-const processResetSchema = false
-const processBulkInsert = true
-const processUseMetrics = true
-const processSize = 1000
-
-export const register = ({ registerAction, createHook }) => {
+export const register = ({ registerAction }) => {
     registerAction({
         hook: START_FEATURE,
         name: FEATURE_NAME,
         trace: __filename,
-        handler: async () => {
+        handler: async (settings) => {
+            if ('test1' !== settings.feature) return
+
+            const {
+                testSize,
+                testType,
+                processResetSchema,
+                processBulkInsert,
+                processUseMetrics,
+                processSize,
+            } = settings.test1
+
             const client = getClient()
             let poolSize= 0
             let batchSize = 0

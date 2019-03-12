@@ -17,6 +17,18 @@ CREATE TABLE ":schemaName_data".":queueName__metrics" (
     last_update timestamp with time zone
 );
 
+-- insert basic metrics placeholders
+INSERT INTO ":schemaName_data".":queueName__metrics" ( metric, amount ) VALUES
+( 'cnt', 0 ),
+( 'cpl', 0 ),
+( 'ent', 0 ),
+( 'pkd', 0 ),
+( 'pln', 0 ),
+( 'pnd', 0 ),
+( 'scd', 0 ),
+( 'upd', 0 ),
+( 'wip', 0 );
+
 -- list the new queue in the catalog index
 INSERT INTO ":schemaName_catalog"."fq_queues"
 ( subject, created_at :max_attempt_head :lock_duration_head )

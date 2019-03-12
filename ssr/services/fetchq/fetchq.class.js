@@ -22,6 +22,7 @@ import completeDocument from './fetchq-methods/documents/complete'
 import killDocument from './fetchq-methods/documents/kill'
 
 import getMetrics from './fetchq-methods/metrics/get'
+import computeMetrics from './fetchq-methods/metrics/compute'
 
 import utilsPlan from './fetchq-methods/utils/plan'
 import utilsSchedule from './fetchq-methods/utils/schedule'
@@ -92,6 +93,7 @@ export class Fetchq {
 
         this.metrics = {
             get: getMetrics(this),
+            compute: computeMetrics(this),
         }
 
         this.utils = {

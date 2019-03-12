@@ -31,7 +31,7 @@ skipped_docs AS (
     FROM ":schemaName_data".":queueName__docs" as _source
     JOIN all_docs AS _values ON _source.subject = _values.subject
     WHERE _source.subject NOT IN (SELECT subject FROM inserted_docs)
-    FOR UPDATE FOR UPDATE SKIP LOCKED
+    FOR UPDATE SKIP LOCKED
 ),
 updated_docs AS (
     UPDATE ":schemaName_data".":queueName__docs" AS docs

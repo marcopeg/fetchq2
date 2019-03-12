@@ -16,6 +16,7 @@ const services = [
 const features = [
     require('./features/test0'),
     require('./features/test1'),
+    require('./features/test2'),
 ]
 
 const getConfig = (key, def) => {
@@ -27,7 +28,7 @@ registerAction({
     hook: SETTINGS,
     name: '♦ boot',
     handler: async ({ settings }) => {
-        settings.feature = getConfig('RUN_FEATURE', 'test1')
+        settings.feature = getConfig('RUN_FEATURE', 'test2')
 
         settings.test1 = {
             testSize: getConfig('TEST1_TEST_SIZE', 0),

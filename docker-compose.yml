@@ -1,0 +1,25 @@
+version: '2.1'
+services:
+
+    postgres:
+        image: postgres
+        ports:
+            - 5432:5432
+
+    test1:
+        build: ./services/fetchq2
+        depends_on:
+            - postgres
+        environment:
+            LOG_LEVEL: verbose
+            RUN_FEATURE: test2
+            TEST1_TEST_SIZE: 0
+            TEST1_TEST_TYPE: insert-metrics
+            PG_HOST: postgres
+            PG_PORT: 5432
+            PG_DATABASE: postgres
+            PG_USERNAME: postgres
+            PG_PASSWORD: postgres
+            PG_MAX_CONN_ATTEMPTS: 2
+            PG_CONN_ATTEMPTS_DELAY: 500
+

@@ -26,43 +26,32 @@ SELECT * FROM inserted_docs
 
 const qStats = `
 ,
+count_inserted AS (
+    SELECT COUNT(subject) AS amount FROM inserted_docs
+),
 increment_cnt AS (
-    INSERT INTO ":schemaName_data".":queueName__metrics" AS t (metric, amount, last_update)
-    SELECT 'cnt', (
-        SELECT COUNT(subject) FROM inserted_docs
-    ), NOW()
-    ON CONFLICT (metric) DO UPDATE SET 
-    amount = t.amount + EXCLUDED.amount,
-    last_update = EXCLUDED.last_update
+    UPDATE ":schemaName_data".":queueName__metrics"
+    SET amount = amount + (SELECT MAX(amount) FROM count_inserted),
+    last_update = NOW()
+    WHERE metric = 'cnt'
 ),
 increment_ent AS (
-    INSERT INTO ":schemaName_data".":queueName__metrics" AS t (metric, amount, last_update)
-    SELECT 'ent', (
-        SELECT COUNT(subject) FROM inserted_docs
-    ), NOW()
-    ON CONFLICT (metric) DO UPDATE SET 
-    amount = t.amount + EXCLUDED.amount,
-    last_update = EXCLUDED.last_update
+    UPDATE ":schemaName_data".":queueName__metrics"
+    SET amount = amount + (SELECT MAX(amount) FROM count_inserted),
+    last_update = NOW()
+    WHERE metric = 'ent'
 ),
 increment_pln AS (
-    INSERT INTO ":schemaName_data".":queueName__metrics" AS t (metric, amount, last_update)
-    SELECT 'pln', (
-        SELECT COUNT(subject) FROM inserted_docs
-        WHERE status = 0
-    ), NOW()
-    ON CONFLICT (metric) DO UPDATE SET 
-    amount = t.amount + EXCLUDED.amount,
-    last_update = EXCLUDED.last_update
+    UPDATE ":schemaName_data".":queueName__metrics"
+    SET amount = amount + (SELECT COUNT(subject) FROM inserted_docs WHERE status = 0),
+    last_update = NOW()
+    WHERE metric = 'pln'
 ),
 increment_pnd AS (
-    INSERT INTO ":schemaName_data".":queueName__metrics" AS t (metric, amount, last_update)
-    SELECT 'pnd', (
-        SELECT COUNT(subject) FROM inserted_docs
-        WHERE status = 1
-    ), NOW()
-    ON CONFLICT (metric) DO UPDATE SET
-    amount = t.amount + EXCLUDED.amount,
-    last_update = EXCLUDED.last_update
+    UPDATE ":schemaName_data".":queueName__metrics"
+    SET amount = amount + (SELECT COUNT(subject) FROM inserted_docs WHERE status = 1),
+    last_update = NOW()
+    WHERE metric = 'pnd'
 )
 `
 

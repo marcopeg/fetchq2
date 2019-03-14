@@ -46,23 +46,26 @@ prev_iteration ASC;
 
 const qStats = `
 ,
+count_picked AS (
+    SELECT COUNT(subject) AS amount FROM picked_tasks
+),
 increment_wip AS (
-    INSERT INTO ":schemaName_data".":queueName__metrics" AS t (metric, amount, last_update)
-    SELECT 'wip', (SELECT COUNT(subject) FROM picked_tasks), NOW()
-    ON CONFLICT (metric) DO
-    UPDATE SET amount = t.amount + EXCLUDED.amount, last_update = EXCLUDED.last_update
+    UPDATE ":schemaName_data".":queueName__metrics"
+    SET amount = amount + (SELECT MAX(amount) FROM count_picked),
+    last_update = NOW()
+    WHERE metric = 'wip'
 ),
 decrement_pnd AS (
-    INSERT INTO ":schemaName_data".":queueName__metrics" AS t (metric, amount, last_update)
-    SELECT 'pnd', (SELECT COUNT(subject) FROM picked_tasks), NOW()
-    ON CONFLICT (metric) DO
-    UPDATE SET amount = t.amount - EXCLUDED.amount, last_update = EXCLUDED.last_update
+    UPDATE ":schemaName_data".":queueName__metrics"
+    SET amount = amount - (SELECT MAX(amount) FROM count_picked),
+    last_update = NOW()
+    WHERE metric = 'pnd'
 ),
 increment_pkd AS (
-    INSERT INTO ":schemaName_data".":queueName__metrics" AS t (metric, amount, last_update)
-    SELECT 'pkd', (SELECT COUNT(subject) FROM picked_tasks), NOW()
-    ON CONFLICT (metric) DO
-    UPDATE SET amount = t.amount + EXCLUDED.amount, last_update = EXCLUDED.last_update
+    UPDATE ":schemaName_data".":queueName__metrics"
+    SET amount = amount + (SELECT MAX(amount) FROM count_picked),
+    last_update = NOW()
+    WHERE metric = 'pkd'
 )
 `
 

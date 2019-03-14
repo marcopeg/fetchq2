@@ -37,29 +37,32 @@ SELECT * FROM updated_docs
 
 const qStats = `
 ,
+count_updated AS (
+    SELECT COUNT(subject) AS amount FROM updated_docs
+),
 decrement_wip AS (
-    INSERT INTO ":schemaName_data".":queueName__metrics" AS t (metric, amount, last_update)
-    SELECT 'wip', (SELECT COUNT(subject) FROM updated_docs), NOW()
-    ON CONFLICT (metric) DO
-    UPDATE SET amount = t.amount - EXCLUDED.amount, last_update = EXCLUDED.last_update
+    UPDATE ":schemaName_data".":queueName__metrics"
+    SET amount = amount - (SELECT MAX(amount) FROM count_updated),
+    last_update = NOW()
+    WHERE metric = 'wip'
 ),
 increment_pln AS (
-    INSERT INTO ":schemaName_data".":queueName__metrics" AS t (metric, amount, last_update)
-    SELECT 'pln', (SELECT COUNT(subject) FROM updated_docs WHERE status = 0), NOW()
-    ON CONFLICT (metric) DO
-    UPDATE SET amount = t.amount + EXCLUDED.amount, last_update = EXCLUDED.last_update
+    UPDATE ":schemaName_data".":queueName__metrics"
+    SET amount = amount + (SELECT COUNT(subject) FROM updated_docs WHERE status = 0),
+    last_update = NOW()
+    WHERE metric = 'pln'
 ),
 increment_pnd AS (
-    INSERT INTO ":schemaName_data".":queueName__metrics" AS t (metric, amount, last_update)
-    SELECT 'pnd', (SELECT COUNT(subject) FROM updated_docs WHERE status = 1), NOW()
-    ON CONFLICT (metric) DO
-    UPDATE SET amount = t.amount + EXCLUDED.amount, last_update = EXCLUDED.last_update
+    UPDATE ":schemaName_data".":queueName__metrics"
+    SET amount = amount + (SELECT COUNT(subject) FROM updated_docs WHERE status = 1),
+    last_update = NOW()
+    WHERE metric = 'pnd'
 ),
 increment_scd AS (
-    INSERT INTO ":schemaName_data".":queueName__metrics" AS t (metric, amount, last_update)
-    SELECT 'scd', (SELECT COUNT(subject) FROM updated_docs), NOW()
-    ON CONFLICT (metric) DO
-    UPDATE SET amount = t.amount + EXCLUDED.amount, last_update = EXCLUDED.last_update
+    UPDATE ":schemaName_data".":queueName__metrics"
+    SET amount = amount + (SELECT MAX(amount) FROM count_updated),
+    last_update = NOW()
+    WHERE metric = 'scd'
 )
 `
 

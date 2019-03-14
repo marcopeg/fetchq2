@@ -14,10 +14,10 @@ export const register = ({ registerAction }) => {
             const start = new Date()
             const client = getClient()
 
-            const iterations = 100000
+            const iterations = 10
             const batchSize = 1000
-            const pickSize = 250
-            const variance = 100000
+            const pickSize = 25
+            const variance = 10000
 
             await client.start()
             await client.queue.create('tasks')
@@ -64,7 +64,7 @@ export const register = ({ registerAction }) => {
                     }),
                     new Promise(async (resolve) => {
                         try {
-                            await client.docs.insert('tasks', upsert_mixed)
+                            await client.docs.upsert('tasks', upsert_mixed)
                         } catch (err) {
                             logError(`[test2] insert upsert_mixed - ${err.message}`)
                         } finally {
@@ -85,17 +85,17 @@ export const register = ({ registerAction }) => {
                             resolve()
                         }
                     }),
-                    new Promise(async (resolve) => {
-                        try {
-                            const pick2 = await client.docs.pick('tasks', pickSize)
-                            if (!pick2.length) return resolve()
-                            await client.docs.complete('tasks', pick2)
-                        } catch (err) {
-                            logError(`[test2] pick/complete - ${err.message}`)
-                        } finally {
-                            resolve()
-                        }
-                    }),
+                    // new Promise(async (resolve) => {
+                    //     try {
+                    //         const pick2 = await client.docs.pick('tasks', pickSize)
+                    //         if (!pick2.length) return resolve()
+                    //         await client.docs.complete('tasks', pick2)
+                    //     } catch (err) {
+                    //         logError(`[test2] pick/complete - ${err.message}`)
+                    //     } finally {
+                    //         resolve()
+                    //     }
+                    // }),
                 ])
 
             }

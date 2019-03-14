@@ -27,7 +27,8 @@ INSERT INTO ":schemaName_data".":queueName__metrics" ( metric, amount ) VALUES
 ( 'pnd', 0 ),
 ( 'scd', 0 ),
 ( 'upd', 0 ),
-( 'wip', 0 );
+( 'wip', 0 ),
+( 'kll', 0 );
 
 -- list the new queue in the catalog index
 INSERT INTO ":schemaName_catalog"."fq_queues"

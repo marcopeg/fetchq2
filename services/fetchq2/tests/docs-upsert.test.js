@@ -58,5 +58,6 @@ describe('Upsert Documents', () => {
         expect(stats.ent.value).toEqual(3)
         expect(stats.pnd.value).toEqual(2)
         expect(stats.pln.value).toEqual(1)
+        expect(stats.upd.value).toEqual(2)
     })
 })

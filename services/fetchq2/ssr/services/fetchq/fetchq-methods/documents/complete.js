@@ -31,17 +31,20 @@ SELECT * FROM updated_docs
 
 const qStats = `
 ,
+count_updated AS (
+    SELECT COUNT(subject) AS amount FROM updated_docs
+),
 decrement_wip AS (
-    INSERT INTO ":schemaName_data".":queueName__metrics" AS t (metric, amount, last_update)
-    SELECT 'wip', (SELECT COUNT(subject) FROM updated_docs), NOW()
-    ON CONFLICT (metric) DO
-    UPDATE SET amount = t.amount - EXCLUDED.amount, last_update = EXCLUDED.last_update
+    UPDATE ":schemaName_data".":queueName__metrics"
+    SET amount = amount - (SELECT MAX(amount) FROM count_updated),
+    last_update = NOW()
+    WHERE metric = 'wip'
 ),
 increment_cpl AS (
-    INSERT INTO ":schemaName_data".":queueName__metrics" AS t (metric, amount, last_update)
-    SELECT 'cpl', (SELECT COUNT(subject) FROM updated_docs), NOW()
-    ON CONFLICT (metric) DO
-    UPDATE SET amount = t.amount + EXCLUDED.amount, last_update = EXCLUDED.last_update
+    UPDATE ":schemaName_data".":queueName__metrics"
+    SET amount = amount + (SELECT MAX(amount) FROM count_updated),
+    last_update = NOW()
+    WHERE metric = 'cpl'
 )
 `
 

@@ -14,9 +14,9 @@ export const register = ({ registerAction }) => {
             const start = new Date()
             const client = getClient()
 
-            const iterations = 10
-            const batchSize = 1000
-            const pickSize = 25
+            const iterations = 100
+            const batchSize = 500
+            const pickSize = 10
             const variance = 10000
 
             await client.start()
@@ -85,17 +85,17 @@ export const register = ({ registerAction }) => {
                             resolve()
                         }
                     }),
-                    // new Promise(async (resolve) => {
-                    //     try {
-                    //         const pick2 = await client.docs.pick('tasks', pickSize)
-                    //         if (!pick2.length) return resolve()
-                    //         await client.docs.complete('tasks', pick2)
-                    //     } catch (err) {
-                    //         logError(`[test2] pick/complete - ${err.message}`)
-                    //     } finally {
-                    //         resolve()
-                    //     }
-                    // }),
+                    new Promise(async (resolve) => {
+                        try {
+                            const pick2 = await client.docs.pick('tasks', pickSize)
+                            if (!pick2.length) return resolve()
+                            await client.docs.complete('tasks', pick2)
+                        } catch (err) {
+                            logError(`[test2] pick/complete - ${err.message}`)
+                        } finally {
+                            resolve()
+                        }
+                    }),
                 ])
 
             }

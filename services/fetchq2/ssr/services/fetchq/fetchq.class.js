@@ -7,6 +7,7 @@ import resetSchema from './fetchq-methods/lifecycle/reset-schema'
 import initSchema from './fetchq-methods/lifecycle/init-schema'
 import dropSchema from './fetchq-methods/lifecycle/drop-schema'
 import start from './fetchq-methods/lifecycle/start'
+import stop from './fetchq-methods/lifecycle/stop'
 
 import createQueue from './fetchq-methods/queue/create'
 import indexQueue from './fetchq-methods/queue/index-create'
@@ -72,6 +73,7 @@ export class Fetchq {
         this.dropSchema = dropSchema(this)
         this.resetSchema = resetSchema(this)
         this.start = start(this)
+        this.stop = stop(this)
 
         this.queue = {
             create: createQueue(this),

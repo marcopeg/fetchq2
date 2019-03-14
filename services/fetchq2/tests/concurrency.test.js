@@ -31,6 +31,10 @@ describe('Concurrency test', () => {
         client = await getClient()
         await client.start()
     })
+    
+    afterAll(async () => {
+        await client.stop()
+    })
 
     beforeEach(async () => {
         await client.resetSchema()
@@ -69,13 +73,20 @@ describe('Concurrency test', () => {
     })
     
     test('parallel - insert colliding documents', async () => {
-        await Promise.all([
-            client.docs.insert(qname, generateDocs(10000, 100)),
-            client.docs.insert(qname, generateDocs(10000, 100)),
-            client.docs.insert(qname, generateDocs(10000, 100)),
-            client.docs.insert(qname, generateDocs(10000, 100)),
-        ])
+        for (let i = 0; i < 1; i++) {
+            const inserts = Array(10)
+                .fill(0)
+                .map(() =>
+                    client.docs.insert(qname, generateDocs(250, 5000, { metrics: true })
+                ))
+
+            try {
+                await Promise.all(inserts)
+            } catch (err) {
+                console.log(err.message)
+            }
+        }
 
         await verifyRealTimeStats()
-    })
+    }, 1000 * 60)
 })

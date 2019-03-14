@@ -1,4 +1,5 @@
 
+import { logDebug } from '@marcopeg/utils/lib/logger'
 import { sqlSubject } from '../lib/sql-subject'
 import { sqlPayload } from '../lib/sql-payload'
 import { sqlNextIteration } from '../lib/sql-next-iteration'
@@ -66,21 +67,39 @@ export default ctx => {
     const [ _q, _qStats ] = sqlSmallQuery(ctx, q, qStats)
 
     return async (queueName, docs, options = {}) => {
-        try {
-            const values = docs.reduce(doc2str, '').substr(1)
-            const query = _q
-                .replace(/:queueName/g, queueName)
-                .replace(/:values/g, values)
-                .replace(/:queryStats/g, options.metrics === false ? '' : (
-                    _qStats.replace(/:queueName/g, queueName)
-                ))
-            
-            const res = await ctx.query(query)
-            return res.rows
-        } catch (err) {
-            const error = new Error(`[Fetchq] failed to insert documents: ${queueName} - ${err.message}`)
-            error.original = err
-            throw error
-        }
+        const maxAttempts = options.attempts || 5
+        let deadLockCount = 0
+        let lastError = null
+
+        // racing conditions when trying to 
+        do {
+            try {
+                const values = docs.reduce(doc2str, '').substr(1)
+                const query = _q
+                    .replace(/:queueName/g, queueName)
+                    .replace(/:values/g, values)
+                    .replace(/:queryStats/g, options.metrics === false ? '' : (
+                        _qStats.replace(/:queueName/g, queueName)
+                    ))
+                
+                const res = await ctx.query(query)
+                return res.rows
+            } catch (err) {
+                if (err.code === '40P01') {
+                    logDebug(`[Fetchq] failed attempt at insert documents: ${deadLockCount + 1}/${maxAttempts} - ${err.message}`)
+                    deadLockCount += 1
+                    lastError = err
+                } else {
+                    const error = new Error(`[Fetchq] failed to insert documents: ${queueName} - ${err.message}`)
+                    error.original = err
+                    throw error
+                }
+            }
+        } while (deadLockCount < maxAttempts)
+
+        const error = new Error(`[Fetchq] failed to insert documents: ${queueName} - ${lastError.message}`)
+        error.original = lastError
+        throw error
+        
     }
 }
